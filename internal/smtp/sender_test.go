@@ -23,6 +23,25 @@ func TestExtractEmailAddress(t *testing.T) {
 	}
 }
 
+func TestFormatOriginalSender(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"john@example.com", `"john@example.com"`},
+		{"John Doe <john@example.com>", `"John Doe via john@example.com"`},
+		{"<john@example.com>", `"john@example.com"`},
+		{`"John Doe" <john@example.com>`, `"John Doe via john@example.com"`},
+	}
+
+	for _, tt := range tests {
+		got := formatOriginalSender(tt.input)
+		if got != tt.want {
+			t.Errorf("formatOriginalSender(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
 func TestNewSender(t *testing.T) {
 	s := NewSender("smtp.gmail.com", 587, "user@gmail.com", "secret", "dest@gmail.com")
 	if s.host != "smtp.gmail.com" {

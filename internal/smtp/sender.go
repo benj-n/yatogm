@@ -59,11 +59,20 @@ func (s *Sender) Send(rawEmail []byte, originalFrom string) error {
 
 	// Write headers that Gmail will use for filtering.
 	// The "From" must be the authenticated sender (Gmail requirement),
-	// but we put the original sender in Reply-To and X-Original-From.
-	fmt.Fprintf(&buf, "From: %s\r\n", s.to)
+	// but we embed the original sender in the display name so it's
+	// visible in the inbox (e.g. "Alice via alice@yahoo.com" <you@gmail.com>).
+	if origFrom != "" {
+		fmt.Fprintf(&buf, "From: %s <%s>\r\n", formatOriginalSender(origFrom), s.to)
+	} else {
+		fmt.Fprintf(&buf, "From: %s\r\n", s.to)
+	}
 	fmt.Fprintf(&buf, "To: %s\r\n", s.to)
 	if origSubject != "" {
-		fmt.Fprintf(&buf, "Subject: %s\r\n", origSubject)
+		if origFrom != "" {
+			fmt.Fprintf(&buf, "Subject: [from: %s] %s\r\n", ExtractEmailAddress(origFrom), origSubject)
+		} else {
+			fmt.Fprintf(&buf, "Subject: %s\r\n", origSubject)
+		}
 	}
 	if origDate != "" {
 		fmt.Fprintf(&buf, "Date: %s\r\n", origDate)
@@ -161,6 +170,26 @@ func readBody(r interface{ Read([]byte) (int, error) }) ([]byte, error) {
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(r)
 	return buf.Bytes(), err
+}
+
+// formatOriginalSender creates a quoted display name from the original From
+// header for embedding in the forwarded message's From field.
+// Examples:
+//
+//	"John Doe <john@yahoo.com>" -> "\"John Doe via john@yahoo.com\""
+//	"john@yahoo.com"            -> "\"john@yahoo.com\""
+func formatOriginalSender(origFrom string) string {
+	addr, err := mail.ParseAddress(origFrom)
+	if err != nil {
+		// Can't parse — use the raw value, cleaned up.
+		clean := strings.NewReplacer(`"`, `'`, `\`, ``).Replace(strings.TrimSpace(origFrom))
+		return `"` + clean + `"`
+	}
+	if addr.Name != "" {
+		name := strings.NewReplacer(`"`, `'`, `\`, ``).Replace(addr.Name)
+		return fmt.Sprintf(`"%s via %s"`, name, addr.Address)
+	}
+	return `"` + addr.Address + `"`
 }
 
 // ExtractEmailAddress extracts the bare email address from a From header value
