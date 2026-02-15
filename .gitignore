@@ -1,0 +1,34 @@
+# Binaries
+/yatogm
+*.exe
+
+# Environment and secrets
+.env
+config.yml
+*.pem
+*.key
+
+# State files
+state.json
+*.tmp
+
+# Go
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Test output
+coverage.out
+coverage.html

@@ -1,0 +1,2 @@
+# Run yatogm every 15 minutes
+*/15 * * * * /usr/local/bin/yatogm -config /etc/yatogm/config.yml

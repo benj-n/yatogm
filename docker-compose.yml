@@ -1,0 +1,38 @@
+services:
+  yatogm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yatogm
+    restart: unless-stopped
+    volumes:
+      # Configuration file (create from config.example.yml)
+      - ./config.yml:/etc/yatogm/config.yml:ro
+      # Persistent state (tracks which emails have been fetched)
+      - yatogm-data:/data
+      # Optional: custom crontab schedule
+      # - ./crontab:/etc/yatogm/crontab:ro
+    environment:
+      # Secrets can be passed via environment variables instead of config file.
+      # Uncomment and set these, or use a .env file.
+      # - YATOGM_GMAIL_APP_PASSWORD=your-gmail-app-password
+      # - YATOGM_YAHOO_0_APP_PASSWORD=your-yahoo-app-password
+      - TZ=UTC
+    env_file:
+      - .env
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=10M
+
+volumes:
+  yatogm-data:
+    driver: local
