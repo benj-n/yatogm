@@ -142,8 +142,15 @@ func (w *Worker) processMailbox(index int, yahoo config.YahooMailbox) (fetched, 
 			continue
 		}
 
+		// Delete from Yahoo server (actual removal happens on QUIT).
+		if err := client.Delete(msgNum); err != nil {
+			log.Error("delete failed", "msg_num", msgNum, "uid", uid, "error", err)
+			errors++
+			continue
+		}
+
 		fetched++
-		log.Info("message forwarded", "msg_num", msgNum, "uid", uid)
+		log.Info("message forwarded and deleted", "msg_num", msgNum, "uid", uid)
 	}
 
 	log.Info("mailbox processing complete", "fetched", fetched, "errors", errors)
